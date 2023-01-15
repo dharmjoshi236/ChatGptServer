@@ -1,28 +1,27 @@
-const express = require('express');
-const app = express();
+import express from 'express'
 const PORT = process.env.PORT || 5000;
-const openai = require('openai');
-const cors = require('cors')
-require('dotenv').config();
+import { Configuration, OpenAIApi } from 'openai';
+import cors from 'cors'
+import * as dotenv from 'dotenv'
 
+
+dotenv.config();
+const app = express();
 app.use(express.json());
 app.use(cors())
 
 
-let HEADERS = {
-    'Authorization': `Bearer ${process.env.CHATGPT_API_KEY}`,
-    'Content-Type': 'application/json'
-}
-
-
-const configuration = new openai.Configuration({
+const configuration = new Configuration({
     organization: process.env.ORGANIZATION_KEY,
     apiKey: process.env.CHATGPT_API_KEY
 });
-const openAiApi = new openai.OpenAIApi(configuration);
+const openAiApi = new OpenAIApi(configuration);
 
 const generatePrompt = (topic, subTopic) => {
-    return `Create a blog on ${topic}, where it tells deeply about ${subTopic}`
+    return `Write a blog about ${topic} which has content related to ${subTopic}.
+        Blog should be well written with all the facts and knowledge about ${subTopic}.
+        Write 800 characters in a blog.
+        `
 }
 
 app.get('/',(req,res)=> {
@@ -47,12 +46,11 @@ app.post('/getchatgpt', async (req,res)=> {
         const completion = await openAiApi.createCompletion({
             model: "text-davinci-003",
             prompt: generatePrompt(req.body.topic, req.body.subTopic),
-            temperature: 0.5,
-            max_tokens: 750
+            temperature: 0,
+            max_tokens: 2500
           });
           res.status(200).json({
-            data: completion.data.choices[0].text,
-            message:"Fetched Successfully"
+            data: completion.data.choices[0].text
           })
     } catch(e){
         res.status(400).json({
